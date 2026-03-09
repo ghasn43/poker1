@@ -218,9 +218,10 @@ class PokerGame:
             # Move to next street or showdown
             if self.street == STREET_RIVER or player.all_in or other.all_in:
                 self.street = STREET_SHOWDOWN
+                self.active_player = other
             else:
                 self.advance_street()
-            self.active_player = other
+                # active_player is already set by advance_street() -> _set_first_to_act()
         else:
             # Other player acts
             self.active_player = other
