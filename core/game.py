@@ -60,6 +60,7 @@ class PokerGame:
         self.hand_number = 0
         self.last_bet_size = 0
         self.current_round_bet_level = 0
+        self.players_acted_this_street: set = set()  # Track who has acted this street
 
     def start_new_hand(self) -> None:
         """Initialize a new hand."""
@@ -77,6 +78,7 @@ class PokerGame:
         self.hand_number += 1
         self.last_bet_size = 0
         self.current_round_bet_level = 0
+        self.players_acted_this_street = set()
 
         # Post blinds
         self._post_blinds()
@@ -151,6 +153,9 @@ class PokerGame:
             self.ai.current_bet = 0
             self.current_round_bet_level = 0
             self.last_bet_size = 0
+            
+            # Reset players acted tracking for new street
+            self.players_acted_this_street = set()
 
             # Big blind acts first postflop
             self._set_first_to_act()
@@ -193,6 +198,9 @@ class PokerGame:
 
         # Log action
         self.action_history.append((player.name, actual_action, actual_amount))
+        
+        # Track that this player has acted this street
+        self.players_acted_this_street.add(player.name)
 
         # Check if hand is over
         if player.folded:
@@ -203,10 +211,10 @@ class PokerGame:
             # Hand over, current player wins pot
             return (actual_action, f"Hand over - {player.name} wins")
 
-        # Check if both players have bet same amount (or checked)
-        if player.current_bet == other.current_bet and (
-            player.all_in or other.all_in or not other.folded
-        ):
+        # Check if both players have acted with equal bets
+        both_acted = len(self.players_acted_this_street) >= 2
+        if (player.current_bet == other.current_bet and both_acted and 
+            (player.all_in or other.all_in or not other.folded)):
             # Move to next street or showdown
             if self.street == STREET_RIVER or player.all_in or other.all_in:
                 self.street = STREET_SHOWDOWN
